@@ -1,9 +1,17 @@
 from flask import Flask, request, jsonify
 from peewee import *
 from playhouse.shortcuts import model_to_dict, dict_to_model
+import json
 
 
-db = PostgresqlDatabase ('people', user='alanmalpartida', password='',
+f = open('master.json')
+
+data = json.load(f)
+
+print(data)
+
+
+db = PostgresqlDatabase ('wine', user='alanmalpartida', password='',
                          host='localhost', port=5432)
 app = Flask(__name__)
 
@@ -11,45 +19,51 @@ class BaseModel(Model):
     class Meta:
         database = db
         
-class Person(BaseModel):
-    name = CharField()
-    age = IntegerField()
+class Wine(BaseModel):
+    WineName = CharField()
+    ProductType = CharField()
+    Price = DecimalField()
+    CountryState = CharField()
+    Region = CharField()
+    VarietalType = CharField()
+    Description = TextField()
+    img = CharField()
+    flag =CharField()
+    
     
 db.connect()
-db.drop_tables([Person])
-db.create_tables([Person])
+db.drop_tables([Wine])
+db.create_tables([Wine])
 
-Person(name='alan', age=28).save()
-Person(name='Yeezus', age=300).save()
+Wine.insert_many(data).execute()
+
+
+
+
 
 @app.route('/')
 def index():
-    return 'Hello World'
+    return "ALANTOTHE"
 
-@app.route('/person/', methods=['GET', 'POST'])
-@app.route('/person/<id>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/wine/', methods=['GET', 'POST'])
+@app.route('/wine/<id>', methods=['GET', 'PUT', 'DELETE'])
 def endpoint(id=None):
   if request.method == 'GET':
     if id:
-        return jsonify(model_to_dict(Person.get(Person.id == id)))
+        return jsonify(model_to_dict(Wine.get(Wine.id == id)))
     else:
-        people_list = []
-        for person in Person.select():
-            people_list.append(model_to_dict(person))
-        return jsonify(people_list)
-
-  if request.method =='PUT':
-    body = request.get_json()
-    Person.update(body).where(Person.id == id).execute()
-    return "Person " + str(id) + " has been updated."
+        wine_list = []
+        for wine in Wine.select():
+            wine_list.append(model_to_dict(wine))
+        return jsonify(wine_list)
 
   if request.method == 'POST':
-    new_person = dict_to_model(Person, request.get_json())
-    new_person.save()
+    new_wine = dict_to_model(Wine, request.get_json())
+    new_wine.save()
     return jsonify({"success": True})
 
   if request.method == 'DELETE':
-    Person.delete().where(Person.id == id).execute()
+    Wine.delete().where(Wine.id == id).execute()
     return "Person " + str(id) + " deleted."
 
 app.run(port=4000)
